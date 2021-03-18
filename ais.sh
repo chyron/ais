@@ -5,7 +5,8 @@ ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
 hwclock --systohc
 
 # Localization
-nvim /etc/locale.gen
+echo "en_US.UTF-8" > /etc/locale.gen
+echo "de_DE.UTF-8" >> /etc/locale.gen
 locale-gen
 
 # Bootloader
