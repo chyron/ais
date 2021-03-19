@@ -82,7 +82,7 @@ express_installation () {
 	pacman -S --noconfirm sway
 
 	# automatic login on tty1
-	cp -R /etc/runit/sv/agetty-tty1 /etc/sv/agetty-autologin-tty1
+	cp -R /etc/runit/sv/agetty-tty1 /etc/runit/sv/agetty-autologin-tty1
 	echo "${AUTOLOGIN}" > /etc/runit/sv/agetty-autologin-tty1/conf
 	ln -s /etc/runit/sv/agetty-autologin-tty1 /run/runit/service
 
