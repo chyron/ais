@@ -1,56 +1,117 @@
 #!/bin/bash
 
-# System clock
-ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
-hwclock --systohc
+AUTOLOGIN=$(cat <<EOF
+if [ -x /sbin/agetty -o -x /bin/agetty ]; then
+	# util-linux specific settings
+	if [ "\${tty}" = "tty1" ]; then
+		GETTY_ARGS="--autologin $USERNAME --noclear"
+	fi
+fi
 
-# Localization
-echo "en_US.UTF-8" > /etc/locale.gen
-echo "de_DE.UTF-8" >> /etc/locale.gen
-locale-gen
+BAUD_RATE=38400
+TERM_NAME=linux
+EOF
+)
 
-# Bootloader
-pacman -S grub os-prober efibootmgr
-grub-install --recheck /dev/sda
-grub-mkconfig -o /boot/grub/grub.cfg
+AUTOSTART=$(cat <<EOF
+if [ -z \$DISPLAY ] && [ "\$(tty)" == "/dev/tty1" ]; then
+	exec sway
+fi
+EOF
+)
 
-# set root password
-passwd
+express_installation () {
+	# arch base system and kernel
+	pacman -S --noconfirm base base-devel runit elogind-runit linux linux-firmware
 
-# add new user
-echo "username: "
-read USERNAME
+	# install some utilities
+	pacman -S --noconfirm neovim git
 
-useradd -m $USERNAME
-passwd $USERNAME
+	# System clock
+	ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+	hwclock --systohc
 
-# add user to wheel group (root)
-EDITOR=nvim visudo
+	# Localization
+	echo "en_US.UTF-8" > /etc/locale.gen
+	echo "de_DE.UTF-8" >> /etc/locale.gen
+	locale-gen
 
-gpasswd -a $USERNAME wheel
+	# Bootloader
+	pacman -S --noconfirm grub os-prober efibootmgr
+	grub-install --recheck /dev/sda
+	grub-mkconfig -o /boot/grub/grub.cfg
 
-# hostname
-echo "hostname: "
-read HOSTNAME
+	# set root password
+	echo -n "Root Password: "
+	passwd
 
-echo $HOSTNAME > /etc/hostname
+	# add new user
+	echo -n "username: "
+	read USERNAME
 
-# install dhcp client
-pacman -S dhcpcd
+	useradd -m $USERNAME
+	echo -n "$USERNAME Password: "
+	passwd $USERNAME
 
-# runit specific install
-pacman -S connman-runit connman-gtk
-ln -s /etc/runit/sv/connmand /etc/runit/runsvdir/default
+	# add user to wheel group (root)
+	EDITOR=nvim visudo
 
-# install git
-pacman -S git
+	gpasswd -a $USERNAME wheel
 
-# install yay
-git clone https://aur.archlinux.org/yay.git
-chown -R $USERNAME:$USERNAME yay
-cd yay
-sudo su $USERNAME makepkg -si
-rm -rf yay
+	# hostname
+	echo -n "hostname: "
+	read HOSTNAME
 
-# install xorg and graphic drivers
-pacman -S xorg-server xorg-xinit xf86-video-nouveau
+	echo $HOSTNAME > /etc/hostname
+
+	# install dhcp client
+	pacman -S --noconfirm dhcpcd
+
+	# runit specific install
+	pacman -S --noconfirm connman-runit connman-gtk
+	ln -s /etc/runit/sv/connmand /etc/runit/runsvdir/default
+
+	# install yay
+	# git clone https://aur.archlinux.org/yay.git
+	# chown -R $USERNAME:$USERNAME yay
+	# cd yay
+	# sudo su $USERNAME makepkg -si
+	# rm -rf yay
+
+	# install xorg and graphic drivers
+	# pacman -S --noconfirm xorg-server xorg-xinit xf86-video-nouveau
+
+	# install sway
+	pacman -S --noconfirm sway
+
+	# automatic login on tty1
+	cp -R /etc/runit/sv/agetty-tty1 /etc/sv/agetty-autologin-tty1
+	echo "${AUTOLOGIN}" > /etc/runit/sv/agetty-autologin-tty1/conf
+	ln -s /etc/runit/sv/agetty-autologin-tty1 /run/runit/service
+
+	# autostart sway
+	echo "${AUTOSTART}" >> /home/$USERNAME/.bash_profile
+
+	# sway config
+	su - $USERNAME -c "mkdir $HOME/.config/sway"
+	su - $USERNAME -c "cp /etc/sway/config $HOME/.config/sway"
+}
+
+echo '
+       _     
+  __ _(_)___ 
+ / _` | / __|
+| (_| | \__ \
+ \__,_|_|___/
+ '
+
+echo -e "1) Express Installation\n"
+
+echo -n "Enter a number (default=1): "
+
+read CHOICE
+
+case $CHOICE in
+	1) express_installation;;
+	*) express_installation;;
+esac
