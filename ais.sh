@@ -1,25 +1,5 @@
 #!/bin/bash
 
-AUTOLOGIN=$(cat <<EOF
-if [ -x /sbin/agetty -o -x /bin/agetty ]; then
-	# util-linux specific settings
-	if [ "\${tty}" = "tty1" ]; then
-		GETTY_ARGS="--autologin $USERNAME --noclear"
-	fi
-fi
-
-BAUD_RATE=38400
-TERM_NAME=linux
-EOF
-)
-
-AUTOSTART=$(cat <<EOF
-if [ -z \$DISPLAY ] && [ "\$(tty)" == "/dev/tty1" ]; then
-	exec sway
-fi
-EOF
-)
-
 express_installation () {
 	# install some utilities
 	pacman -S --noconfirm neovim git
@@ -80,6 +60,26 @@ express_installation () {
 
 	# install sway
 	pacman -S --noconfirm sway
+
+	AUTOLOGIN=$(cat <<EOF
+if [ -x /sbin/agetty -o -x /bin/agetty ]; then
+	# util-linux specific settings
+	if [ "\${tty}" = "tty1" ]; then
+		GETTY_ARGS="--autologin $USERNAME --noclear"
+	fi
+fi
+
+BAUD_RATE=38400
+TERM_NAME=linux
+EOF
+	)
+
+	AUTOSTART=$(cat <<EOF
+if [ -z \$DISPLAY ] && [ "\$(tty)" == "/dev/tty1" ]; then
+	exec sway
+fi
+EOF
+	)
 
 	# automatic login on tty1
 	cp -R /etc/runit/sv/agetty-tty1 /etc/runit/sv/agetty-autologin-tty1
