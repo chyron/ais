@@ -21,9 +21,6 @@ EOF
 )
 
 express_installation () {
-	# arch base system and kernel
-	pacman -S --noconfirm base base-devel runit elogind-runit linux linux-firmware
-
 	# install some utilities
 	pacman -S --noconfirm neovim git
 
