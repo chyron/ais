@@ -2,7 +2,7 @@
 
 express_installation () {
 	# install some utilities
-	pacman -S --noconfirm neovim git
+	pacman -S --noconfirm neovim git alacritty
 
 	# System clock
 	ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
